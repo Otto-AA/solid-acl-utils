@@ -16,8 +16,25 @@
   ],
   "author": "otto-aa",
   "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.4.5",
+    "@babel/plugin-transform-runtime": "^7.4.4",
+    "@babel/preset-env": "^7.4.5",
+    "@babel/runtime": "^7.4.5",
+    "babel-jest": "^24.8.0",
+    "babel-loader": "^8.0.6",
+    "babel-polyfill": "^6.26.0",
+    "jest": "^24.8.0",
+    "regenerator-runtime": "^0.13.2",
+    "standard": "^12.0.1",
+    "webpack": "^4.35.0",
+    "webpack-cli": "^3.3.5"
+  },
   "bugs": {
     "url": "https://github.com/otto-aa/solid-acl-utils/issues"
   },
-  "homepage": "https://github.com/otto-aa/solid-acl-utils#readme"
+  "homepage": "https://github.com/otto-aa/solid-acl-utils#readme",
+  "dependencies": {
+    "solid-acl-parser": "0.0.1"
+  }
 }

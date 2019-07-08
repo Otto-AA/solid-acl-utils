@@ -1,0 +1,7 @@
+coverage/
+tests/
+docs/
+.travis.yml
+api.md
+webpack.config.js
+.babelrc
