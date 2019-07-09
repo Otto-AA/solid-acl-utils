@@ -1,20 +1,24 @@
 import parseLinkHeader from 'parse-link-header'
-import { AclParser } from 'solid-acl-parser'
-import { createAclDocProxy } from '../AclDocProxy'
+import SolidAclParser from 'solid-acl-parser';
+import { createAclDocProxy } from './AclDocProxy'
+import { AclDocProxyOptions } from './AclDocProxy/AclDocProxyHandler';
+
+const { AclDoc, AclParser } = SolidAclParser
+type AclParser = import('solid-acl-parser/types/AclParser').default
+type AclDoc = import('solid-acl-parser/types/AclDoc').default
 
 class AclApi {
+  private readonly fetch: (url: RequestInfo, options: RequestInit) => Promise<Response>
+  private readonly options: AclDocProxyOptions
+  private parser: AclParser
+  private aclUrl: string
+  
   constructor (fetch, options) {
     this.fetch = fetch
     this.options = options
-    this.parser = null
-    this.aclUrl = undefined
   }
 
-  /**
-   * @param {string} fileUrl
-   * @returns {AclDocProxy}
-   */
-  async loadFromFileUrl (fileUrl) {
+  async loadFromFileUrl (fileUrl: string) {
     this.aclUrl = await this.fetchAclUrl(fileUrl)
     const response = await this.fetch(this.aclUrl, { method: 'GET' })
     const turtle = await response.text()
@@ -26,21 +30,13 @@ class AclApi {
     return proxyDoc
   }
 
-  /**
-   * @param {string} fileUrl
-   * @returns {string} aclUrl retrieved from the link header
-   */
-  async fetchAclUrl (fileUrl) {
+  async fetchAclUrl (fileUrl: string) {
     const response = await this.fetch(fileUrl, { method: 'OPTIONS' })
     return AclApi.getAclUrlFromResponse(response)
   }
 
-  /**
-   * @param {AclDoc} doc
-   * @returns {Promise<doc>}
-   */
-  async saveDoc (doc) {
-    const turtle = await this.parser.aclDocToTurtle(doc)
+  async saveDoc (doc: AclDoc) {
+    const turtle = await this.parser.aclDocToTurtle(doc) as string // TODO
     return this.fetch(this.aclUrl, {
       method: 'PUT',
       headers: {
@@ -50,11 +46,7 @@ class AclApi {
     })
   }
 
-  /**
-   * @param {Response} response
-   * @returns {string}
-   */
-  static getAclUrlFromResponse (response) {
+  static getAclUrlFromResponse (response: Response) {
     const { headers } = response
     const parsed = parseLinkHeader(headers.get('link'))
     if (!parsed['.acl']) {

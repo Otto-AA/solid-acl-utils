@@ -1,8 +1,24 @@
 {
-  "presets": ["@babel/env"],
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "useBuiltIns": "usage",
+        "corejs": 3,
+      }
+    ],
+    "@babel/typescript"
+  ],
   "env": {
     "test": {
-      "plugins": ["@babel/plugin-transform-runtime"]
+      "plugins": [
+        [
+          "@babel/transform-runtime",
+          {
+            "corejs": 3,
+          }
+        ]
+      ]
     }
   }
 }

@@ -1,4 +1,16 @@
+import { AclDocProxy } from './AclDocProxy';
+
+type AclDoc = import('solid-acl-parser/types/AclDoc').default
+
+export interface AclDocProxyOptions {
+  autoSave?: boolean
+}
+
 class AclDocProxyHandler {
+  private readonly saveDoc: (doc: AclDoc) => Promise<void>
+  private readonly options: AclDocProxyOptions
+  private _proxyDoc: AclDocProxy
+
   constructor ({ saveDoc }, options) {
     this.saveDoc = saveDoc
     this.options = options
@@ -7,19 +19,15 @@ class AclDocProxyHandler {
 
   /**
    * @description Define which proxyDoc should be returned instead of the doc itself
-   * @param {any} proxyDoc
    */
-  setProxyDoc (proxyDoc) {
+  setProxyDoc (proxyDoc: AclDocProxy) {
     this._proxyDoc = proxyDoc
   }
 
   /**
    * @description proxy a get request to the AclDoc
-   * @param {AclDoc} doc
-   * @param {string} key
-   * @returns {any|Promise<any>}
    */
-  get (doc, key) {
+  get (doc: AclDoc, key: string) {
     if (!AclDocProxyHandler._proxyMethods.includes(key) ||
         !this.options.autoSave) {
       return this._proxyReturnValue(doc, key)
@@ -31,13 +39,7 @@ class AclDocProxyHandler {
 
     return this._proxyWrap(doc, key)
   }
-
-  /**
-   * @param {AclDoc} doc
-   * @param {string} key
-   * @returns {Promise<any>}
-   */
-  _proxyWrap (doc, key) {
+  _proxyWrap (doc: AclDoc, key: string) {
     return (...args) => {
       const returnValue = doc[key](...args)
 
@@ -47,12 +49,7 @@ class AclDocProxyHandler {
     }
   }
 
-  /**
-   * @param {AclDoc} doc
-   * @param {string} key
-   * @returns {any}
-   */
-  _proxyReturnValue (doc, key) {
+  _proxyReturnValue (doc: AclDoc, key: string) {
     if (typeof doc[key] !== 'function') {
       return doc[key]
     }
