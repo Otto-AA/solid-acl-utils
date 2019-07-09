@@ -1,3 +1,3 @@
-import SolidAclParser from 'solid-acl-parser'
+import AclApi from './api'
 
-export default SolidAclParser
+export default AclApi
