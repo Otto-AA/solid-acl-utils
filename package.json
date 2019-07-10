@@ -7,7 +7,7 @@
     "test": "jest",
     "build": "webpack",
     "build:tsc": "npx tsc --outDir types --emitDeclarationOnly --declaration",
-    "prepack": "npm run test && npm run build && npm run build:tsc"
+    "prepublishOnly": "npm run test && npm run build && npm run build:tsc"
   },
   "repository": {
     "type": "git",
