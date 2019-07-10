@@ -1,3 +1,9 @@
+import SolidAclParser from 'solid-acl-parser'
 import AclApi from './AclApi'
 
-export default AclApi
+const exports = {
+  AclApi,
+  ...SolidAclParser
+}
+
+export default exports
