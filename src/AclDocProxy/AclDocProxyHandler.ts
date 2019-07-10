@@ -28,19 +28,20 @@ class AclDocProxyHandler {
    * @description proxy a get request to the AclDoc
    */
   get (doc: AclDoc, key: string) {
+    if (key === AclDocProxyHandler._SAVE_DOC_KEY) {
+      return () => this.saveDoc(doc).then(() => this.proxyDoc)
+    }
+
     if (!AclDocProxyHandler._proxyMethods.includes(key) ||
         !this.options.autoSave) {
       return this._proxyReturnValue(doc, key)
     }
 
-    if (key === AclDocProxyHandler._SAVE_DOC_KEY) {
-      return () => this.saveDoc(doc)
-    }
-
     return this._proxyWrap(doc, key)
   }
   _proxyWrap (doc: AclDoc, key: string) {
-    return (...args) => {
+    return (...args: any) => {
+      // @ts-ignore
       const returnValue = doc[key](...args)
 
       // Auto save and return with the return value from the original method

@@ -7,13 +7,18 @@ const { AclDoc, AclParser } = SolidAclParser
 type AclParser = import('solid-acl-parser/types/AclParser').default
 type AclDoc = import('solid-acl-parser/types/AclDoc').default
 
+type Fetch = (url: RequestInfo, options: RequestInit) => Promise<Response>
+interface AclApiOptions {
+  autoSave: boolean
+}
+
 class AclApi {
   private readonly fetch: (url: RequestInfo, options: RequestInit) => Promise<Response>
   private readonly options: AclDocProxyOptions
-  private parser: AclParser
-  private aclUrl: string
+  private parser?: AclParser
+  private aclUrl?: string
   
-  constructor (fetch, options) {
+  constructor (fetch: Fetch, options: AclApiOptions = { autoSave: true }) {
     this.fetch = fetch
     this.options = options
   }
@@ -32,10 +37,19 @@ class AclApi {
 
   async fetchAclUrl (fileUrl: string) {
     const response = await this.fetch(fileUrl, { method: 'OPTIONS' })
+      .catch(err => {
+        if (typeof err === 'object' && err.status && err.status === 404) {
+          return err
+        }
+        throw err
+      })
     return AclApi.getAclUrlFromResponse(response)
   }
 
   async saveDoc (doc: AclDoc) {
+    if (!this.parser || !this.aclUrl) {
+      throw new Error('Tried to save the document before it was loaded')
+    }
     const turtle = await this.parser.aclDocToTurtle(doc) as string // TODO
     return this.fetch(this.aclUrl, {
       method: 'PUT',
@@ -46,10 +60,10 @@ class AclApi {
     })
   }
 
-  static getAclUrlFromResponse (response: Response) {
+  static getAclUrlFromResponse (response: Response): string {
     const { headers } = response
-    const parsed = parseLinkHeader(headers.get('link'))
-    if (!parsed['.acl']) {
+    const parsed = parseLinkHeader(headers.get('link') || '')
+    if (!parsed || !parsed['.acl']) {
       throw new Error("Couldn't retrieve the acl location from the link header")
     }
     return parsed['.acl'].url
