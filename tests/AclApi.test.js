@@ -51,7 +51,7 @@ describe('AclApi.getAclUrlFromResponse', () => {
 describe('saveDoc', () => {
   test('throws error if not initialized', () => {
     const aclApi = new AclApi(() => {})
-    expect(aclApi.saveDoc()).rejects.toContain('before it was loaded')
+    expect(aclApi.saveDoc()).rejects.toBeDefined()
   })
   test('calls fetch method with parsed turtle', async () => {
     const aclUrl = './file.acl'
