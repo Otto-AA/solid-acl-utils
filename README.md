@@ -31,7 +31,7 @@ const SolidAclUtils = require('solid-acl-utils')
 // You could also use SolidAclUtils.Permissions.READ instead of following
 // This is just more convenient
 const { AclApi, AclDoc, AclParser, AclRule, Permissions, Agents } = SolidAclUtils
-const { READ, WRITE, APPEND, CONTROL } = SolidAclUtils
+const { READ, WRITE, APPEND, CONTROL } = Permissions
 ```
 
 ## Usage
@@ -48,7 +48,7 @@ const fetch = solid.auth.fetch.bind(solid.auth)
 // If autoSave=true, the library will update the permissions with every change you make to the acl
 // If autoSave=false you need to call acl.saveToPod() manually when you are ready
 const aclApi = new AclApi(fetch, { autoSave: true })
-const acl = aclApi.loadFromFileUrl('https://pod.example.org/file.ttl')
+const acl = await aclApi.loadFromFileUrl('https://pod.example.org/file.ttl')
 
 // now we can make changes to acl and it will be automatically updated
 ```
@@ -61,7 +61,7 @@ The doc returned by `loadFromFileUrl` behaves exactly as the one from solid-acl-
 
 ```javascript
 const aclApi = new AclApi(fetch, { autoSave: true })
-const acl = aclApi.loadFromFileUrl('https://pod.example.org/file.ttl')
+const acl = await aclApi.loadFromFileUrl('https://pod.example.org/file.ttl')
 
 // Note: Workaround, because currently no default permissions are copied when a new acl file is created. Not doing this could result in having no CONTROL permissions after the first acl.addRule call
 if (!acl.hasRule(Permissions.ALL, ownerWebId)) {
