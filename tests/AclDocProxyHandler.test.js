@@ -18,7 +18,7 @@ describe('AclDocProxyHandler with resolving saveDoc and options.autoSave', () =>
 
   beforeEach(() => {
     saveDoc.mockClear()
-    const proxyHandler = new AclDocProxyHandler({ saveDoc }, { autoSave: true })
+    const proxyHandler = new AclDocProxyHandler(saveDoc, { autoSave: true })
     proxyDoc = new Proxy(doc, proxyHandler)
     proxyHandler.setProxyDoc(proxyDoc)
   })
@@ -113,7 +113,7 @@ describe('AclDocProxyHandler with rejecting saveDoc and options.autoSave', () =>
 
   beforeEach(() => {
     saveDoc.mockClear()
-    const proxyHandler = new AclDocProxyHandler({ saveDoc }, { autoSave: true })
+    const proxyHandler = new AclDocProxyHandler(saveDoc, { autoSave: true })
     proxyDoc = new Proxy(doc, proxyHandler)
     proxyHandler.setProxyDoc(proxyDoc)
   })
@@ -136,7 +136,7 @@ describe('AclDocProxyHandler with resolving saveDoc and options.autoSave=false',
 
   beforeEach(() => {
     saveDoc.mockClear()
-    const proxyHandler = new AclDocProxyHandler({ saveDoc }, { autoSave: false })
+    const proxyHandler = new AclDocProxyHandler(saveDoc, { autoSave: false })
     proxyDoc = new Proxy(doc, proxyHandler)
     proxyHandler.setProxyDoc(proxyDoc)
   })

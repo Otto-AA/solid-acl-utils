@@ -7,7 +7,7 @@ export const createAclDocProxy = (doc: AclDoc, saveDoc: (doc: AclDoc) => Promise
   if (typeof saveDoc !== 'function') {
     throw new Error('cannot create a proxy without a saveDoc function')
   }
-  const proxyHandler = new AclDocProxyHandler({ saveDoc }, { autoSave })
+  const proxyHandler = new AclDocProxyHandler(saveDoc, { autoSave })
   const proxyDoc: AclDocProxy = new Proxy<AclDoc>(doc, proxyHandler) as any
   proxyHandler.setProxyDoc(proxyDoc)
 

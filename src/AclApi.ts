@@ -1,5 +1,6 @@
+import url from 'url'
 import parseLinkHeader from 'parse-link-header'
-import SolidAclParser from 'solid-acl-parser';
+import SolidAclParser from 'solid-acl-parser'
 import { createAclDocProxy } from './AclDocProxy'
 import { AclDocProxyOptions } from './AclDocProxy/AclDocProxyHandler';
 
@@ -26,7 +27,11 @@ class AclApi {
   async loadFromFileUrl (fileUrl: string) {
     this.aclUrl = await this.fetchAclUrl(fileUrl)
     const response = await this.fetch(this.aclUrl, { method: 'GET' })
-    const turtle = await response.text()
+    if (!response.ok && response.status !== 404) {
+      throw new Error('Unexpected response when trying to fetch acl file. Please make sure you have the correct permissions')
+    }
+    // TODO: Fetch default from parents if 404 instead of empty
+    const turtle = response.ok ? await response.text() : '' // TODO: Add test
 
     this.parser = new AclParser({ fileUrl, aclUrl: this.aclUrl })
     const parsedDoc = await this.parser.turtleToAclDoc(turtle)
@@ -38,11 +43,12 @@ class AclApi {
   async fetchAclUrl (fileUrl: string) {
     const response = await this.fetch(fileUrl, { method: 'OPTIONS' })
       .catch(err => {
-        if (typeof err === 'object' && err.status && err.status === 404) {
+        if (err && err.status && err.status === 404) {
           return err
         }
         throw err
       })
+
     return AclApi.getAclUrlFromResponse(response)
   }
 
@@ -51,22 +57,28 @@ class AclApi {
       throw new Error('Tried to save the document before it was loaded')
     }
     const turtle = await this.parser.aclDocToTurtle(doc) as string // TODO
-    return this.fetch(this.aclUrl, {
+    const response = await this.fetch(this.aclUrl, {
       method: 'PUT',
       headers: {
         'Content-Type': 'text/turtle'
       },
       body: turtle
     })
+    if (!response.ok) {
+      console.error(response)
+      throw new Error(`Error while trying to save the acl file: ${response.status} - ${response.statusText}`)
+    }
+    return response
   }
 
   static getAclUrlFromResponse (response: Response): string {
     const { headers } = response
     const parsed = parseLinkHeader(headers.get('link') || '')
-    if (!parsed || !parsed['.acl']) {
+    if (!parsed || !parsed.acl) {
       throw new Error("Couldn't retrieve the acl location from the link header")
     }
-    return parsed['.acl'].url
+    const aclUrl = url.resolve(response.url, parsed.acl.url)
+    return aclUrl // TODO: Update tests
   }
 }
 
