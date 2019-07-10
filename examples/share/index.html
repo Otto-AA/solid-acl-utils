@@ -1,0 +1,129 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Solid Share</title>
+</head>
+<body>
+  <h1>Solid Share</h1>
+  <p>Example for using solid-acl-utils, demonstrating how to grant permissions to specific webIds</p>
+
+  <form action="./">
+    <h3>File/Folder</h3>
+    <label for="fileUrl">Enter the url of the file/folder for which the permissions will be changed</label>
+    <input type="text" name="fileUrl" id="fileUrl">
+    <h3>Agents</h3>
+    <p>The agents describe with whom you want to share the file/folder</p>
+    <label for="webIds">Enter zero or more Web IDs separated by ","</label>
+    <input id="webIds" name="webIds" type="text" value="https://example.solid.community/profile/card#me">
+    <br>
+    <label for="public">Check if you want to give the permissions to everyone</label>
+    <input id="public" name="public" type="checkbox">
+    <hr>
+    <h3>Permissions</h3>
+    <p>Choose what type of access you want to grant. Read, Write, Append and/or Control (which means they will be able to change permissions too)</p>
+    <label for="permRead">Read</label>
+    <input type="checkbox" name="permRead" id="permRead">
+    <label for="permWrite">Write</label>
+    <input type="checkbox" name="permWrite" id="permWrite">
+    <label for="permAppend">Append</label>
+    <input type="checkbox" name="permAppend" id="permAppend">
+    <label for="permControl">Control</label>
+    <input type="checkbox" name="permControl" id="permControl">
+    <hr>
+    <button type="submit" id="share">Grant permissions</button>
+  </form>
+
+  <script type="application/javascript" src="https://solid.github.io/solid-auth-client/dist/solid-auth-client.bundle.js"></script>
+  <script type="application/javascript" src="../../dist/browser/solid-acl-utils.bundle.js"></script>
+  <script type="application/javascript">
+    const inputs = {
+      fileUrl: document.getElementById('fileUrl'),
+      webIds: document.getElementById('webIds'),
+      public: document.getElementById('public'),
+      permissions: {
+        read: document.getElementById('permRead'),
+        write: document.getElementById('permWrite'),
+        append: document.getElementById('permAppend'),
+        control: document.getElementById('permControl')
+      }
+    }
+    const form = document.querySelector('form')
+    const state = {
+      fileUrl: undefined,
+      webIds: [],
+      public: false,
+      permissions: {
+        read: false,
+        write: false,
+        append: false,
+        control: false
+      }
+    }
+
+    function updateState() {
+      state.fileUrl = inputs.fileUrl.value
+      state.webIds = inputs.webIds.value ? inputs.webIds.value.split(',').filter(val => !!val) : []
+      state.public = inputs.public.checked
+      state.permissions.read = inputs.permissions.read.checked
+      state.permissions.write = inputs.permissions.write.checked
+      state.permissions.append = inputs.permissions.append.checked
+      state.permissions.control = inputs.permissions.control.checked
+    }
+
+    async function main() {
+      const session = await popupLogin()
+      updateState()
+      form.addEventListener('change', updateState)
+      form.addEventListener('submit', e => {
+        e.preventDefault()
+        updatePermissions()
+      })
+    }
+
+    async function updatePermissions() {
+      const { AclApi, Permissions, Agents } = SolidAclUtils
+      const { READ, WRITE, APPEND, CONTROL } = Permissions
+
+      const fetch = solid.auth.fetch.bind(solid.auth)
+      const utils = new AclApi(fetch, { autoSave: true })
+      const acl = await utils.loadFromFileUrl(state.fileUrl)
+
+      const permissions = new Permissions()
+      if (state.permissions.read)
+        permissions.add(READ)
+      if (state.permissions.write)
+        permissions.add(WRITE)
+      if (state.permissions.append)
+        permissions.add(APPEND)
+      if (state.permissions.control)
+        permissions.add(CONTROL)
+
+      const agents = new Agents()
+      agents.addWebId(...state.webIds)
+      if (state.public)
+        agents.addPublic()
+
+      try {
+        await acl.addRule(permissions, agents)
+        console.log('updated the acl')      
+      } catch (e) {
+        console.error('Error while adding rule')
+        console.error(e)
+        throw e
+      }
+    }
+
+    async function popupLogin() {
+      let session = await solid.auth.currentSession();
+      const popupUri = 'https://solid.community/common/popup.html';
+      if (!session)
+        session = await solid.auth.popupLogin({ popupUri });
+      return session
+    }
+
+    main()
+  </script>
+</body>
+</html>
