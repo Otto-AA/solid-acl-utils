@@ -3,14 +3,10 @@
 
 A js library for working with acl files. It allows you to add/change/remove permissions of files and folders in solid pods.
 
-# Warning
-
-When creating a new acl file, the library currently doesn't copy the permissions from the parent folder. This means that if you create a new acl file and don't give your webId CONTROL permissions, you won't be able to work with this file any longer. In the future it will copy the default permissions.
-
 # Documentation
 *Due to a lack of time this is not as detailed as I'd like to and hasn't got that many examples. This will hopefully change in the future*
 
-Live example (read the warning above before doing something there): https://otman.solid.community/public/solid-acl-utils/examples/
+Live example: https://otman.solid.community/public/solid-acl-utils/examples/
 
 ## Installation
 

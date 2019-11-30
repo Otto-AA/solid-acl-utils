@@ -3,7 +3,9 @@ import AclApi from '../src/AclApi'
 import { resolve } from 'url';
 
 const { AclDoc, Permissions, Agents } = SolidAclParser
+const { READ, WRITE, APPEND, CONTROL } = Permissions
 
+const webId = 'https://example.solid.community/profile/card#me'
 const samplePublicFileUrl = 'https://alice.databox.me/profile/card'
 const samplePublicAclContent = `
 @prefix   acl:  <http://www.w3.org/ns/auth/acl#>.
@@ -15,7 +17,33 @@ const samplePublicAclContent = `
     acl:mode        acl:Read;                                 # has Read-only access
     acl:accessTo    <${samplePublicFileUrl}>.  # to the public profile`
 const samplePublicAclDoc = new AclDoc({ accessTo: samplePublicFileUrl })
-samplePublicAclDoc.addRule(Permissions.READ, Agents.PUBLIC, { subjectId: `${samplePublicFileUrl}.acl#authorization2` })
+samplePublicAclDoc.addRule(READ, Agents.PUBLIC, { subjectId: `${samplePublicFileUrl}.acl#authorization2` })
+
+const sampleDefaultFileUrl = 'https://example.solid.community/public/test/index.html'
+const sampleDefaultAclContent = `
+# ACL resource for the public folder
+@prefix acl: <http://www.w3.org/ns/auth/acl#>.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+
+# The owner has all permissions
+<#owner>
+    a acl:Authorization;
+    acl:agent <${webId}>;
+    acl:accessTo <./>;
+    acl:defaultForNew <./>;
+    acl:mode acl:Read, acl:Write, acl:Control.
+
+# The public has read permissions
+<#public>
+    a acl:Authorization;
+    acl:agentClass foaf:Agent;
+    acl:accessTo <./>;
+    acl:defaultForNew <./>;
+    acl:mode acl:Read.
+`
+const sampleDefaultFileDoc = new AclDoc({ accessTo: sampleDefaultFileUrl })
+sampleDefaultFileDoc.addRule([READ, WRITE, CONTROL], webId, { subjectId: '#owner' })
+sampleDefaultFileDoc.addRule(READ, Agents.PUBLIC, { subjectId: '#public' })
 
 describe('AclApi.getAclUrlFromResponse', () => {
   const fileUrl = 'https://solid.example.org/foo/file.ttl'
@@ -143,13 +171,63 @@ describe('loadFromFileUrl', () => {
 
     expect(proxyDoc).toEqual(samplePublicAclDoc)
     expect(typeof proxyDoc.saveToPod).toBe('function')
-    expect(proxyDoc.hasRule(Permissions.READ, Agents.PUBLIC)).toBe(true)
+    expect(proxyDoc.hasRule(READ, Agents.PUBLIC)).toBe(true)
     expect(saveDoc).toHaveBeenCalledTimes(0)
     await expect(proxyDoc.deleteAgents(Agents.PUBLIC)).resolves.toBe(proxyDoc)
     expect(saveDoc).toHaveBeenCalled()
     const saveDocArg = saveDoc.mock.calls[0][0]
     expect(saveDocArg instanceof AclDoc).toBe(true)
-    expect(saveDocArg.hasRule(Permissions.READ, Agents.PUBLIC)).toBe(false)
-    expect(proxyDoc.hasRule(Permissions.READ, Agents.PUBLIC)).toBe(false)
+    expect(saveDocArg.hasRule(READ, Agents.PUBLIC)).toBe(false)
+    expect(proxyDoc.hasRule(READ, Agents.PUBLIC)).toBe(false)
+  })
+
+  test('fetches and loads default acl file', async () => {
+    const expectedAclUrls = [
+      `${sampleDefaultFileUrl}.acl`,
+      `${getParent(sampleDefaultFileUrl)}.acl`,
+      `${getParent(getParent(sampleDefaultFileUrl))}.acl`
+    ]
+    const fileResponses = expectedAclUrls.map(aclUrl => {
+      return {
+        url: sampleDefaultFileUrl,
+        ok: true,
+        headers: {
+          get: (name) => name === 'link' ? `<${aclUrl}>; rel="acl"` : null
+        }
+      }
+    })
+    const notFoundResponse = {
+      ok: false,
+      status: 404
+    }
+    const aclResponse = {
+      ok: true,
+      text: () => Promise.resolve(sampleDefaultAclContent)
+    }
+    
+    const fetch = jest.fn()
+    fetch.mockResolvedValueOnce(fileResponses[0])
+      .mockResolvedValueOnce(notFoundResponse)
+      .mockResolvedValueOnce(fileResponses[1])
+      .mockResolvedValueOnce(notFoundResponse)
+      .mockResolvedValueOnce(fileResponses[2])
+      .mockResolvedValueOnce(aclResponse)
+    
+    const aclApi = new AclApi(fetch, { autoSave: true })
+    const proxyDoc = await aclApi.loadFromFileUrl(sampleDefaultFileUrl)
+
+    expect(Object.entries(proxyDoc.rules)).toHaveLength(2)
+    expect(proxyDoc.equals(sampleDefaultFileDoc)).toBe(true)
+    expect(fetch).toHaveBeenNthCalledWith(1, sampleDefaultFileUrl, expect.any(Object))
+    expect(fetch).toHaveBeenNthCalledWith(2, expectedAclUrls[0], expect.any(Object))
+    expect(fetch).toHaveBeenNthCalledWith(3, getParent(sampleDefaultFileUrl), expect.any(Object))
+    expect(fetch).toHaveBeenNthCalledWith(4, expectedAclUrls[1], expect.any(Object))
+    expect(fetch).toHaveBeenNthCalledWith(5, getParent(getParent(sampleDefaultFileUrl)), expect.any(Object))
+    expect(fetch).toHaveBeenNthCalledWith(6, expectedAclUrls[2], expect.any(Object))
   })
 })
+
+// Url of the parent folder with the / at the end
+function getParent (url) {
+  return url.substring(0, url.slice(0, -1).lastIndexOf('/') + 1)
+}

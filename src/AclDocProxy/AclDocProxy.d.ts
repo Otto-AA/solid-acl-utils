@@ -10,11 +10,15 @@ interface AddRuleOptions {
 }
 
 export interface AclDocProxy {
+  readonly strict: boolean;
+  readonly accessTo: string;
   readonly rules: Record<string, AclRule>;
   readonly otherQuads: Quad[];
   saveToPod(): Promise<void>
   addRule(firstVal: AclRule | PermissionsCastable, agents?: Agents, { subjectId }?: AddRuleOptions): Promise<this>
+  addDefaultRule(firstVal: AclRule | PermissionsCastable, agents?: Agents, { subjectId }?: AddRuleOptions): Promise<this>
   hasRule(firstVal: AclRule | PermissionsCastable, agents?: Agents): boolean;
+  hasDefaultRule(firstVal: AclRule | PermissionsCastable, agents?: Agents): boolean;
   getRuleBySubjectId(subjectId: string): AclRule | undefined;
   deleteRule(firstVal: AclRule | PermissionsCastable, agents?: Agents): Promise<this>;
   deleteBySubjectId(subjectId: string, firstVal?: AclRule | PermissionsCastable, agents?: Agents): Promise<this>;
