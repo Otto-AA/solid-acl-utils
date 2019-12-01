@@ -216,7 +216,6 @@ describe('loadFromFileUrl', () => {
       .mockResolvedValueOnce(notFoundResponse)
       .mockResolvedValueOnce(fileResponses[2])
       .mockResolvedValueOnce(aclResponse)
-      .mockResolvedValueOnce(aclResponse)
     
     const aclApi = new AclApi(fetch, { autoSave: true })
     const proxyDoc = await aclApi.loadFromFileUrl(sampleDefaultFileUrl)
@@ -229,8 +228,7 @@ describe('loadFromFileUrl', () => {
     expect(fetch).toHaveBeenNthCalledWith(4, expectedAclUrls[1], expect.any(Object))
     expect(fetch).toHaveBeenNthCalledWith(5, getParent(getParent(sampleDefaultFileUrl)), expect.any(Object))
     expect(fetch).toHaveBeenNthCalledWith(6, expectedAclUrls[2], expect.any(Object))
-    expect(fetch).toHaveBeenNthCalledWith(7, expectedAclUrls[2], expect.any(Object))
-    expect(fetch).toHaveBeenCalledTimes(7)
+    expect(fetch).toHaveBeenCalledTimes(6)
   })
 
   test.todo('add tests for fetchAcl')

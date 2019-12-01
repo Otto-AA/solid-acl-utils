@@ -36,7 +36,7 @@ class AclApi {
     this.fileUrl = fileUrl
     this.aclUrl = await this.fetchAclUrl(fileUrl)
     try {
-      const turtle = await this.fetchAcl(this.aclUrl)
+      const turtle = await this.fetchAclAndStoreEtag(this.aclUrl)
       return this.loadFromTurtle(turtle)
     } catch (err) {
       if (err.status !== 404) {
@@ -120,8 +120,8 @@ class AclApi {
     return response
   }
 
-  // Makes a head request and stores the etag if available. On success returns 
-  async fetchAcl (aclUrl: string): Promise<string> {
+  // Makes a head request and stores the etag if available. On success returns turtle
+  async fetchAclAndStoreEtag (aclUrl: string): Promise<string> {
     const headResponse = await this.fetch(aclUrl, { method: 'HEAD' })
 
     if (!headResponse.ok) {
@@ -129,9 +129,15 @@ class AclApi {
     }
 
     this.eTag = headResponse.headers.get(ETAG)
+
+    return this.fetchAcl(aclUrl)
+      .catch(response => { throw new Error(`Unexpected response while fething Acl: ${response.status} ${response.url}`) })
+  }
+
+  async fetchAcl (aclUrl: string): Promise<string> {
     const response = await this.fetch(aclUrl, { method: 'GET' })
     if (!response.ok) {
-      throw new Error(`Unexpected response for GET request: ${response.status} ${response.url}`)
+      throw response
     }
 
     return response.text()
