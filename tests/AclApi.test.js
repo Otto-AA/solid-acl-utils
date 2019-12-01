@@ -82,9 +82,10 @@ describe('saveDoc', () => {
     expect(aclApi.saveDoc()).rejects.toBeDefined()
   })
   test('calls fetch method with parsed turtle', async () => {
+    const response = { ok: true, headers: { get: () => null } }
     const aclUrl = './file.acl'
     const fetch = jest.fn()
-    fetch.mockResolvedValue({ ok: true })
+    fetch.mockResolvedValue(response)
     const aclDocToTurtle = jest.fn()
     aclDocToTurtle.mockResolvedValue('turtle content')
     const doc = { test: true }
@@ -93,7 +94,7 @@ describe('saveDoc', () => {
     aclApi.aclUrl = aclUrl
     aclApi.parser = { aclDocToTurtle }
 
-    expect(await aclApi.saveDoc(doc)).toEqual({ ok: true })
+    expect(await aclApi.saveDoc(doc)).toEqual(response)
     expect(aclDocToTurtle.mock.calls[0][0]).toBe(doc)
     expect(fetch.mock.calls[0][0]).toBe(aclUrl)
     const { method, headers, body } = fetch.mock.calls[0][1]
@@ -156,10 +157,12 @@ describe('loadFromFileUrl', () => {
     }
     const aclResponse = {
       ok: true,
-      text: () => samplePublicAclContent
+      text: () => samplePublicAclContent,
+      headers: { get: () => null }
     }
     const fetch = jest.fn()
     fetch.mockResolvedValueOnce(fileResponse)
+      .mockResolvedValueOnce(aclResponse)
       .mockResolvedValueOnce(aclResponse)
 
     const saveDoc = jest.fn()
@@ -202,7 +205,8 @@ describe('loadFromFileUrl', () => {
     }
     const aclResponse = {
       ok: true,
-      text: () => Promise.resolve(sampleDefaultAclContent)
+      text: () => Promise.resolve(sampleDefaultAclContent),
+      headers: { get: () => null }
     }
     
     const fetch = jest.fn()
@@ -211,6 +215,7 @@ describe('loadFromFileUrl', () => {
       .mockResolvedValueOnce(fileResponses[1])
       .mockResolvedValueOnce(notFoundResponse)
       .mockResolvedValueOnce(fileResponses[2])
+      .mockResolvedValueOnce(aclResponse)
       .mockResolvedValueOnce(aclResponse)
     
     const aclApi = new AclApi(fetch, { autoSave: true })
@@ -224,7 +229,14 @@ describe('loadFromFileUrl', () => {
     expect(fetch).toHaveBeenNthCalledWith(4, expectedAclUrls[1], expect.any(Object))
     expect(fetch).toHaveBeenNthCalledWith(5, getParent(getParent(sampleDefaultFileUrl)), expect.any(Object))
     expect(fetch).toHaveBeenNthCalledWith(6, expectedAclUrls[2], expect.any(Object))
+    expect(fetch).toHaveBeenNthCalledWith(7, expectedAclUrls[2], expect.any(Object))
+    expect(fetch).toHaveBeenCalledTimes(7)
   })
+
+  test.todo('add tests for fetchAcl')
+  test.todo('add tests for loadFromTurtle')
+  test.todo('add tests for loadDefaultsFromTurtle')
+  test.todo('add tests for etag and if-match usage')
 })
 
 // Url of the parent folder with the / at the end

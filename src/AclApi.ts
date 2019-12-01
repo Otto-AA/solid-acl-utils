@@ -14,41 +14,50 @@ interface AclApiOptions {
   autoSave: boolean
 }
 
+const ETAG = 'ETag'
+const IF_MATCH = 'If-Match'
+const CONTENT_TYPE = 'Content-Type'
+
 class AclApi {
   private readonly fetch: (url: RequestInfo, options: RequestInit) => Promise<Response>
   private readonly options: AclDocProxyOptions
   private _parser?: AclParser
   private _aclUrl?: string
   private _fileUrl?: string
+  private eTag: string | null
   
   constructor (fetch: Fetch, options: AclApiOptions = { autoSave: true }) {
     this.fetch = fetch
     this.options = options
+    this.eTag = null
   }
 
   async loadFromFileUrl (fileUrl: string) {
     this.fileUrl = fileUrl
     this.aclUrl = await this.fetchAclUrl(fileUrl)
-    const response = await this.fetch(this.aclUrl, { method: 'GET' })
-    if (!response.ok && response.status !== 404) {
-      throw new Error('Unexpected response when trying to fetch acl file. Please make sure you have the correct permissions')
+    try {
+      const turtle = await this.fetchAcl(this.aclUrl)
+      return this.loadFromTurtle(turtle)
+    } catch (err) {
+      if (err.status !== 404) {
+        throw err
+      }
+      return this.loadDefaultsFor(this.fileUrl)
     }
-
-    return response.ok ? this.loadFromTurtle(await response.text()) : this.loadDefaultsFor(this.fileUrl)
   }
 
   async loadDefaultsFor(fileUrl: string): Promise<AclDocProxy> {
     const parentUrl = getParent(fileUrl)
     const parentAclUrl = await this.fetchAclUrl(parentUrl)
-    const response = await this.fetch(parentAclUrl, { method: 'GET' })
-    if (!response.ok && response.status !== 404) {
-      throw new Error('Unexpected response when trying to fetch acl file. Please make sure you have the correct permissions')
-    }
-    if (!response.ok) {
+    try {
+      const turtle = await this.fetchAcl(parentAclUrl)
+      return this.loadDefaultsFromTurtle(turtle, parentUrl, parentAclUrl)
+    } catch (err) {
+      if (err.status !== 404) {
+        throw err
+      }
       return this.loadDefaultsFor(parentUrl)
     }
-
-    return this.loadDefaultsFromTurtle(await response.text(), parentUrl, parentAclUrl)
   }
 
   async loadFromTurtle(turtle: string) {
@@ -92,15 +101,40 @@ class AclApi {
     const response = await this.fetch(this.aclUrl, {
       method: 'PUT',
       headers: {
-        'Content-Type': 'text/turtle'
+        [CONTENT_TYPE]: 'text/turtle',
+        ...(this.eTag && { [IF_MATCH]: this.eTag }) // Check that the acl file hasn't been modified
       },
       body: turtle
     })
+
     if (!response.ok) {
       console.error(response)
+      if (response.status === 416) {
+        throw new Error('Error while trying to save the acl file: The file has been changed by another program')
+      }
       throw new Error(`Error while trying to save the acl file: ${response.status} - ${response.statusText}`)
     }
+
+    // this.eTag = response.headers.get(ETAG)
+
     return response
+  }
+
+  // Makes a head request and stores the etag if available. On success returns 
+  async fetchAcl (aclUrl: string): Promise<string> {
+    const headResponse = await this.fetch(aclUrl, { method: 'HEAD' })
+
+    if (!headResponse.ok) {
+      throw headResponse
+    }
+
+    this.eTag = headResponse.headers.get(ETAG)
+    const response = await this.fetch(aclUrl, { method: 'GET' })
+    if (!response.ok) {
+      throw new Error(`Unexpected response for GET request: ${response.status} ${response.url}`)
+    }
+
+    return response.text()
   }
 
   static getAclUrlFromResponse (response: Response): string {
