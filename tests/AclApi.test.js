@@ -163,7 +163,6 @@ describe('loadFromFileUrl', () => {
     const fetch = jest.fn()
     fetch.mockResolvedValueOnce(fileResponse)
       .mockResolvedValueOnce(aclResponse)
-      .mockResolvedValueOnce(aclResponse)
 
     const saveDoc = jest.fn()
     saveDoc.mockResolvedValue('mocked resolve value')

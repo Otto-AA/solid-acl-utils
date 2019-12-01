@@ -115,23 +115,20 @@ class AclApi {
       throw new Error(`Error while trying to save the acl file: ${response.status} - ${response.statusText}`)
     }
 
-    // this.eTag = response.headers.get(ETAG)
+    this.eTag = response.headers.get(ETAG)
 
     return response
   }
 
   // Makes a head request and stores the etag if available. On success returns turtle
   async fetchAclAndStoreEtag (aclUrl: string): Promise<string> {
-    const headResponse = await this.fetch(aclUrl, { method: 'HEAD' })
-
-    if (!headResponse.ok) {
-      throw headResponse
+    const response = await this.fetch(aclUrl, { method: 'GET' })
+    if (!response.ok) {
+      throw response
     }
+    this.eTag = response.headers.get(ETAG)
 
-    this.eTag = headResponse.headers.get(ETAG)
-
-    return this.fetchAcl(aclUrl)
-      .catch(response => { throw new Error(`Unexpected response while fething Acl: ${response.status} ${response.url}`) })
+    return response.text()
   }
 
   async fetchAcl (aclUrl: string): Promise<string> {
