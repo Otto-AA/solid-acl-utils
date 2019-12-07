@@ -115,7 +115,7 @@ class AclApi {
       throw new Error(`Error while trying to save the acl file: ${response.status} - ${response.statusText}`)
     }
 
-    this.eTag = response.headers.get(ETAG)
+    this.storeEtag(response)
 
     return response
   }
@@ -126,7 +126,7 @@ class AclApi {
     if (!response.ok) {
       throw response
     }
-    this.eTag = response.headers.get(ETAG)
+    this.storeEtag(response)
 
     return response.text()
   }
@@ -138,6 +138,13 @@ class AclApi {
     }
 
     return response.text()
+  }
+
+  storeEtag (response: Response): void {
+    this.eTag = response.headers.get(ETAG)
+    if (this.eTag && this.eTag.startsWith('"') && this.eTag.endsWith('"')) {
+      this.eTag = this.eTag.slice(1, -1)
+    }
   }
 
   static getAclUrlFromResponse (response: Response): string {
