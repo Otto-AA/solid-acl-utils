@@ -1,6 +1,6 @@
 {
   "name": "solid-acl-utils",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "",
   "main": "./dist/node/solid-acl-utils.bundle.js",
   "scripts": {
