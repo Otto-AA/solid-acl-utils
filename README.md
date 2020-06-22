@@ -1,4 +1,5 @@
 # Solid ACL Utils [WIP]
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
 [![Build Status](https://travis-ci.org/Otto-AA/solid-acl-utils.svg?branch=master)](https://travis-ci.org/Otto-AA/solid-acl-utils)
 
 A js library for working with acl files. It allows you to add/change/remove permissions of files and folders in solid pods.
