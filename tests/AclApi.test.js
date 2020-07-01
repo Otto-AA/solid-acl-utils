@@ -122,7 +122,7 @@ describe('fetchAclUrl', () => {
 
     expect(aclUrl).toBe(resolve(fileUrl, expectedAclUrl))
     expect(fetch).toHaveBeenCalledTimes(1)
-    expect(fetch).toHaveBeenCalledWith(fileUrl, { method: 'OPTIONS' })
+    expect(fetch).toHaveBeenCalledWith(fileUrl, { method: 'HEAD' })
   })
   test('works if fetch rejects with 404', async () => {
     const fetch = jest.fn()
@@ -141,7 +141,7 @@ describe('fetchAclUrl', () => {
 
     expect(aclUrl).toBe(resolve(fileUrl, expectedAclUrl))
     expect(fetch).toHaveBeenCalledTimes(1)
-    expect(fetch).toHaveBeenCalledWith(fileUrl, { method: 'OPTIONS' })
+    expect(fetch).toHaveBeenCalledWith(fileUrl, { method: 'HEAD' })
   })
 })
 

@@ -85,7 +85,7 @@ class AclApi {
   }
 
   async fetchAclUrl (fileUrl: string) {
-    const response = await this.fetch(fileUrl, { method: 'OPTIONS' })
+    const response = await this.fetch(fileUrl, { method: 'HEAD' })
       .catch(err => {
         if (err && err.status && err.status === 404) {
           return err
