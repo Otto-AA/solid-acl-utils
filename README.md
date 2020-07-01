@@ -15,6 +15,8 @@ Currently this library is still in beta and not well tested. Therefore it isn't 
 
 ### Via npm
 
+WARNING: This is not really safe because it does not include a version and relies on the existence of this github repository
+
 Install it from github
 ```sh
 npm install otto-aa/solid-acl-utils
