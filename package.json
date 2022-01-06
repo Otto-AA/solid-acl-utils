@@ -43,7 +43,7 @@
   "dependencies": {
     "@babel/runtime-corejs3": "^7.10.4",
     "core-js": "^3.6.5",
-    "parse-link-header": "^1.0.1",
+    "parse-link-header": "^2.0.0",
     "solid-acl-parser": "^0.2.1"
   },
   "standard": {
